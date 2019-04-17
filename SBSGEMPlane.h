@@ -1,3 +1,5 @@
+#ifndef SBSGEMPLANE_H_
+#define SBSGEMPLANE_H_
 #include "THaSubDetector.h"
 
 class THaDetectorBase;
@@ -65,4 +67,4 @@ class SBSGEMPlane : public THaSubDetector {
 
 
 
-
+#endif

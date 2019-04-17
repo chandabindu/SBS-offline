@@ -32,7 +32,7 @@ export VERBOSE = 1
 # Compile extra diagnostic code (extra computations and global variables)
 export TESTCODE = 1
 # Compile support code for MC input data
-export MCDATA = 1
+#export MCDATA = 1
 
 #export I387MATH = 1
 export EXTRAWARN = 1
@@ -102,7 +102,8 @@ else
   DEFINES     = -DNDEBUG
 endif
 DEFINES      += -DLINUXVERS -DHAS_SSTREAM
-CXXFLAGS     += -Wall -Woverloaded-virtual -fPIC
+#CXXFLAGS     += -Wall -Woverloaded-virtual -fPIC
+CXXFLAGS     += -Wall -Woverloaded-virtual -fPIC -DUSE_MPD_WITHOUT_SSP
 DICTCXXFLG   :=
 ifdef EXTRAWARN
 #FIXME: should be configure'd:
