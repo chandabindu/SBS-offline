@@ -67,7 +67,6 @@ set(sources MPDModule.cxx MPDModuleVMEv4.cxx SBSBigBite.cxx
   SBSRPBeamSideHodo.cxx SBSRPFarSideHodo.cxx SBSCHAnalyzer.cxx
   SBSTimingHodoscopePMT.cxx SBSTimingHodoscopeBar.cxx SBSTimingHodoscopeCluster.cxx
   SBSBPM.cxx SBSRaster.cxx SBSRasteredBeam.cxx 
-  LHRSScalerEvtHandler.cxx SBSScalerEvtHandler.cxx
   SBSScalerHelicity.cxx SBSScalerHelicityReader.cxx
   gmn_tree_digitized.cxx genrp_tree_digitized.cxx VETROC.cxx
   )

@@ -578,7 +578,8 @@ Int_t SBSGEMModule::ReadDatabase( const TDatime& date ){
   // fCommonModeRMSU.resize( fNAPVs_U );
   // fCommonModeRMSV.resize( fNAPVs_V );
   
-  std::cout << fName << " mapped to " << nentry << " APV25 chips, module gain = " << fModuleGain << std::endl;
+  std::cout << fName << " mapped to " << nentry << " APV25 chips, module gain = " << fModuleGain << " u Pitch = "<<fUStripPitch<<" V pitch "<<fVStripPitch<< std::endl;
+  std::cout << fName << " mapped to " << nentry << " NUstrips = " << fNstripsU << " NVstrips = "<<fNstripsV<<" U angle "<<fUAngle<<" V angle "<<fVAngle << std::endl;
   
   //Geometry info is required to be present in the database for each module:
   Int_t err = ReadGeometry( file, date, true );

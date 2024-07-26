@@ -7,6 +7,7 @@ SBSAnalyzer* SBSAnalyzer::fgAnalyzer = nullptr;
 //_____________________________________________________________________________
 SBSAnalyzer::SBSAnalyzer() : THaAnalyzer()
 {
+cout<<"Test Chandan @ SBSAnalyzer.cxx "<<endl;
 }
 
 //_____________________________________________________________________________
