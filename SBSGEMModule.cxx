@@ -1656,8 +1656,8 @@ Int_t   SBSGEMModule::Decode( const THaEvData& evdata ){
       // First loop over the hits: populate strip, raw strip, raw ADC, ped sub ADC and common-mode-subtracted aDC:
       for( int iraw=0; iraw<nsamp; iraw++ ){ //NOTE: iraw = isamp + fN_MPD_TIME_SAMP * istrip
 	int strip = evdata.GetRawData( it->crate, it->slot, effChan, iraw );
-	//if(fAPVmapping == SBSGEM::kUVA_MOLLER && strip<7)
-	  // continue;
+	if(fAPVmapping == SBSGEM::kUVA_MOLLER && strip<7)
+	   continue;
 	UInt_t decoded_rawADC = evdata.GetData( it->crate, it->slot, effChan, iraw );
 
 	int isamp = iraw%fN_MPD_TIME_SAMP;
@@ -1934,6 +1934,8 @@ Int_t   SBSGEMModule::Decode( const THaEvData& evdata ){
     
       for( Int_t istrip = 0; istrip < nstrips; ++istrip ) {
 
+	if(fAPVmapping == SBSGEM::kUVA_MOLLER && istrip<7) continue;
+
 	//The following loop is no longer necessary if we always do a loop over the data to populate the "local" hit arrays:
 	// if( CM_ENABLED ){ //unless fIsMC is true, then both CM and pedestals were subtracted online:
 	//   // then we skipped the first loop over the data; need to grab the actual data into our temporary arrays:
@@ -1997,7 +1999,7 @@ Int_t   SBSGEMModule::Decode( const THaEvData& evdata ){
 	  //If applicable, subtract common-mode here:
 	  
 	  //We need to subtract the common-mode if it was calculated offline:
-	  if( !CM_ENABLED && BUILD_ALL_SAMPLES && nstrips == fN_APV25_CHAN ){
+	  if( !CM_ENABLED && BUILD_ALL_SAMPLES && nstrips == fN_APV25_CHAN ){//For MOLLER GEM we have #128/APV readout - > nstrips =128
 	    
 	    // std::cout << "isamp, commonMode = " << adc_samp << ", " << commonMode[adc_samp]
 	    // 	      << std::endl;
@@ -2076,7 +2078,7 @@ Int_t   SBSGEMModule::Decode( const THaEvData& evdata ){
 	// AND the CM_ENABLED is not set, meaning we did cm and ped subtraction offline
 	
 	if( (fPedestalMode || fMakeCommonModePlots) && !CM_ENABLED ){ 
-	  int iAPV = strip/double(effN_APV25_CHAN);
+	  int iAPV = strip/double(effN_APV25_CHAN); //For MOLLER GEM strip/APV should be int. multiple of 121.
 	  
 	  if( axis == SBSGEM::kUaxis ){
 	    for( int isamp=0; isamp<fN_MPD_TIME_SAMP; isamp++ ){
@@ -3213,21 +3215,7 @@ void SBSGEMModule::find_clusters_1D( SBSGEM::GEMaxis_t axis, Double_t constraint
   UShort_t FirstSampleCorrCoeff=0;
   UShort_t NsampCorrCoeff=fN_MPD_TIME_SAMP;
 
-  // if( fSuppressFirstLast != 0 ){
-  //   if( fSuppressFirstLast > 0 ){ //suppress first and last time samples
-  //     FirstSampleCorrCoeff = 1;
-  //     NsampCorrCoeff = fN_MPD_TIME_SAMP-2;
-  //   } else if( fSuppressFirstLast == -2 ){ //exclude last time sample only:
-  //     FirstSampleCorrCoeff = 0;
-  //     NsampCorrCoeff = fN_MPD_TIME_SAMP-1;
-  //   } else { //negative value other than -2: exclude first time sample only:
-  //     FirstSampleCorrCoeff = 1;
-  //     NsampCorrCoeff = fN_MPD_TIME_SAMP-1;
-  //   }
-  // }
-  
   for( int ihit=0; ihit<fNstrips_hit; ihit++ ){
-    //if( fAxis[ihit] == axis && fKeepStrip[ihit] ){
     if( fAxis[ihit] == axis ){ //Try only enforcing fKeepStrip on the cluster maximum:
     
       bool newstrip = (striplist.insert( fStrip[ihit] ) ).second;
@@ -3308,7 +3296,6 @@ void SBSGEMModule::find_clusters_1D( SBSGEM::GEMaxis_t axis, Double_t constraint
     
     bool goodADC = sumstrip >= thresh_strip && ADC_maxsamp[strip] >= thresh_samp;
     if( goodADC && sumstrip >= sumleft && sumstrip >= sumright ){
-	//	fADCmax[hitindex[strip]] >= fThresholdSample ){ //new local max:
       bool goodtime = true;
 
       double tstrip = Tmean_strip[strip];
@@ -3334,13 +3321,6 @@ void SBSGEMModule::find_clusters_1D( SBSGEM::GEMaxis_t axis, Double_t constraint
       
       if( fUseStripTimingCuts != 0 && fabs( tstrip - t0 ) > tcut * tsigma ) goodtime = false;
 
-      // if( !goodtime && fClusteringFlag == 1 ){
-      // 	// if a strip fails the basic timing cut but has good deconvoluted ADC value, keep it
-      // 	// anyway:
-      // 	if( fADCmaxDeconvCombo[hitindex[strip]] >= fThresholdSample ){
-      // 	  goodtime = true;
-      // 	}
-      // }
 
       if( goodtime && fKeepStrip[hitindex[strip]] ){
 	islocalmax[strip] = true;
@@ -3458,12 +3438,7 @@ void SBSGEMModule::find_clusters_1D( SBSGEM::GEMaxis_t axis, Double_t constraint
     
     bool found_neighbor_low = true;
 
-    //double Tfit = 
-
     
-    
-    //while( striplist.find( striplo-1 ) != striplist.end() &&
-    //	   stripmax - striplo < maxsep ){
     while( found_neighbor_low ){
       
       found_neighbor_low = striplist.find( striplo - 1 ) != striplist.end() && stripmax - striplo < maxsep;
@@ -3479,7 +3454,6 @@ void SBSGEMModule::find_clusters_1D( SBSGEM::GEMaxis_t axis, Double_t constraint
       }
 
       double Ccoeff = CorrCoeff( NsampCorrCoeff, fADCsamples[hitindex[striplo-1]], fADCsamples[hitindex[stripmax]], FirstSampleCorrCoeff );
-      //double Tdiff_deconv = 
       
       //correlation coefficient of the deconvoluted samples:
       double Ccoeff_deconv = CorrCoeff( fN_MPD_TIME_SAMP, fADCsamples_deconv[hitindex[striplo-1]], fADCsamples_deconv[hitindex[stripmax]] );
@@ -3496,15 +3470,8 @@ void SBSGEMModule::find_clusters_1D( SBSGEM::GEMaxis_t axis, Double_t constraint
       if( found_neighbor_low ) striplo--;
     }
 
-    // while( striplist.find( striphi+1 ) != striplist.end() &&
-    // 	   striphi - stripmax < maxsep ){
-    //   striphi++;
-    // }
-
     bool found_neighbor_high = true;
     
-    //while( striplist.find( striplo-1 ) != striplist.end() &&
-    //	   stripmax - striplo < maxsep ){
     while( found_neighbor_high ){
       
       found_neighbor_high = striplist.find( striphi + 1 ) != striplist.end() && striphi - stripmax < maxsep;
@@ -3532,9 +3499,6 @@ void SBSGEMModule::find_clusters_1D( SBSGEM::GEMaxis_t axis, Double_t constraint
 
       if( Ccoeff_test < fStripAddCorrCoeffCut ) found_neighbor_high = false;
       
-      // if( fDeconvolutionFlag != 0 ){
-      // 	Ccoeff = CorrCoeff( fN_MPD_TIME_SAMP, fADCsamples_deconv[hitindex[striplo-1]], fADCsamples_deconv[hitindex[stripmax]] );
-      // }
 
       //if the greater of the two correlation coefficients (shaped samples vs. deconvoluted samples) is too low, don't add this strip:
      
@@ -3560,7 +3524,6 @@ void SBSGEMModule::find_clusters_1D( SBSGEM::GEMaxis_t axis, Double_t constraint
     double maxpos = (stripmax + 0.5 - 0.5*Nstrips) * pitch + offset;
 
     //If peak position falls inside the "track search region" constraint, add a new cluster: 
-    //if( fabs( maxpos - constraint_center ) <= constraint_width ){
     //Move constraint check to later so we can filter the "total cluster multiplicity" by basic quality criteria:
     //This MIGHT slow down analysis at higher occupancies, but we'll have to see how noticeable it is:
     
@@ -3688,15 +3651,6 @@ void SBSGEMModule::find_clusters_1D( SBSGEM::GEMaxis_t axis, Double_t constraint
     clusttemp.isneg = false; //This is used for negative strip analysis
     clusttemp.isnegontrack = false; //This is used for negative strip analysis
 
-      // In the standalone we don't apply an independent threshold on the cluster sum in the context of 1D cluster-finding:
-      // if( sumADC >= fThresholdClusterSum ){
-      // if( axis == SBSGEM::kVaxis ){
-      // 	fVclusters.push_back( clusttemp );
-      // 	fNclustV++;
-      // } else {
-      // 	fUclusters.push_back( clusttemp );
-      // 	fNclustU++;
-      // }
     if( sumADC >= fThresholdClusterSum && clusttemp.nstrips >= 2 ){ //Increment "total cluster multiplicity"
       nclust_tot++;
     }
@@ -3709,18 +3663,15 @@ void SBSGEMModule::find_clusters_1D( SBSGEM::GEMaxis_t axis, Double_t constraint
       // fStripTfit[hitindex[stripmax]] = Tfit;
 
       
-      // if( fabs( Tfit - 25.0 ) < 10.0 ){ //Experimental, crude hack for testing:
       
       clusters[nclust] = clusttemp;
       nclust++;
       nclust_pos++;
-	//}
 
 	// std::cout << "found cluster, (axis, istripmax, nstrips, ADCsum, hit pos (mm) )=(" << axis << ", " << clusttemp.istripmax << ", "
 	// 	  << clusttemp.nstrips << ", " << clusttemp.clusterADCsum
 	// 	  << ", " << clusttemp.hitpos_mean*1000.0 << ")" << std::endl;
 	
-      //}
     } //Check if peak is inside track search region constraint
   } //end loop on local maxima
 
@@ -3892,8 +3843,6 @@ void SBSGEMModule::find_clusters_1D( SBSGEM::GEMaxis_t axis, Double_t constraint
     
     bool found_neighbor_low = true;
     
-    //while( striplist_neg.find( striplo-1 ) != striplist_neg.end() &&
-    //	   stripmax - striplo < maxsep ){
     while( found_neighbor_low ){
       
       found_neighbor_low = striplist_neg.find( striplo - 1 ) != striplist_neg.end() && stripmax - striplo < maxsep;
@@ -3913,10 +3862,6 @@ void SBSGEMModule::find_clusters_1D( SBSGEM::GEMaxis_t axis, Double_t constraint
       if( found_neighbor_low ) striplo--;
     }
 
-    // while( striplist_neg.find( striphi+1 ) != striplist_neg.end() &&
-    // 	   striphi - stripmax < maxsep ){
-    //   striphi++;
-    // }
 
     bool found_neighbor_high = true;
     
@@ -4029,15 +3974,6 @@ void SBSGEMModule::find_clusters_1D( SBSGEM::GEMaxis_t axis, Double_t constraint
       clusttemp.isneg = true; //This is used for negative strip analysis
       clusttemp.isnegontrack = false; //This is used for negative strip analysis      
 
-      // In the standalone we don't apply an independent threshold on the cluster sum in the context of 1D cluster-finding:
-      // if( sumADC >= fThresholdClusterSum ){
-      // if( axis == SBSGEM::kVaxis ){
-      // 	fVclusters.push_back( clusttemp );
-      // 	fNclustV++;
-      // } else {
-      // 	fUclusters.push_back( clusttemp );
-      // 	fNclustU++;
-      // }
 
       
       //Hopefully this works correctly:
@@ -4049,7 +3985,6 @@ void SBSGEMModule::find_clusters_1D( SBSGEM::GEMaxis_t axis, Double_t constraint
 	// 	  << clusttemp.nstrips << ", " << clusttemp.clusterADCsum
 	// 	  << ", " << clusttemp.hitpos_mean*1000.0 << ")" << std::endl;
 	
-      //}
     } //Check if peak is inside track search region constraint
   } //end loop on local maxima
   
@@ -5235,9 +5170,10 @@ double SBSGEMModule::GetCommonMode( UInt_t isamp, Int_t flag, const mpdmap_t &ap
     
     //NOTE: The largest number of bins that could contain any given sample is binwidth/stepsize = 20 with default settings:
     
-    if(stepsize == 0) return GetCommonMode( isamp, 0, apvinfo );
+    if(stepsize == 0){
+	cout<<"SBSGEMModule::GetCommonMode() ERROR Histogramming has zeros"<<endl;
+	return GetCommonMode( isamp, 0, apvinfo );}
     
-    if(stepsize == 0) cout<<"SBSGEMModule::GetCommonMode() ERROR Histogramming has zeros"<<endl;
     //Construct std::vectors and explicitly zero-initialize them:
     std::vector<int> bincounts(nbins+1,0);
     std::vector<double> binADCsum(nbins+1,0.0);
